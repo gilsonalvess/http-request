@@ -5,20 +5,29 @@ class HttpAccesSpec extends Specification {
     void 'testa resultado requisicao'() {
         setup:
         HttpAcces httpAcces = new HttpAcces()
-        String url = 'http://localhost:8080/login'
+        String url1 = 'http://edoc.agirgo.org.br:5000/GerenciadorProcessoWeb/index.xhtml'
+        String url2 = 'http://edoc.agirgo.org.br:5000/GerenciadorProcessoWeb/processo/dashboard.xhtml'
 
         when:
-        List login = httpAcces.sendRequest(url, 'GET')
-        String token = login.get(1).find('(?<=name="_csrf" type="hidden" value=")[\\w-]+')
+        List pageIndex = httpAcces.sendRequest(url1, 'GET')
+        String viewState = pageIndex.get(1).find('(?<=value=")[\\d-:]+(?=" autocomplete)')
         Map<String, Object> params = [
-                'username': 'admin',
-                'password': 'admin',
-                '_csrf'   : token
+                'javax.faces.partial.ajax'   : true,
+                'javax.faces.source'         : 'formLogin:j_idt20',
+                'javax.faces.partial.execute': '@all',
+                'javax.faces.partial.render' : 'formLogin',
+                'formLogin:j_idt20'          : 'formLogin:j_idt20',
+                'formLogin'                  : 'formLogin',
+                'formLogin:j_idt16'          : '10302',
+                'formLogin:j_idt18'          : 'obdI109j',
+                'javax.faces.ViewState'      : viewState
         ]
-        List paginaInicial = httpAcces.sendRequest(url, 'POST', params)
+
+        List login = httpAcces.sendRequest(url1, 'POST', params)
+        List paginaInicial = httpAcces.sendRequest(url2, 'GET')
 
         then:
         paginaInicial
-        login
+        pageIndex
     }
 }
