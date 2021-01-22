@@ -1,38 +1,68 @@
-import okhttp3.MediaType
 import okhttp3.RequestBody
-import okhttp3.Response
 import spock.lang.Specification
+
+import java.time.LocalDateTime
 
 class HttpAccesSpec extends Specification {
 
-    void 'testa resultado requisicao'() {
+    static Integer qtdUsuariosLogados = 0
+
+    void 'testa login varios usuarios - opa'() {
         setup:
-        HttpAcces httpAcces = new HttpAcces()
-        String url1 = 'http://edoc.agirgo.org.br:5000/GerenciadorProcessoWeb/index.xhtml'
-        String url2 = 'http://edoc.agirgo.org.br:5000/GerenciadorProcessoWeb/processo/dashboard.xhtml'
+        List<DadoLogin> dadosLoginList = HttpAcessHelper.obtenhaDadosLogin()
 
         when:
-        String pageIndex = httpAcces.sendRequest(url1, "GET")
-        String viewState = pageIndex.find('(?<=value=")[\\d-:]+(?=" autocomplete)')
-        Map params = [
-                'javax.faces.partial.ajax'   : true,
-                'javax.faces.source'         : 'formLogin:j_idt20',
-                'javax.faces.partial.execute': '@all',
-                'javax.faces.partial.render' : 'formLogin',
-                'formLogin:j_idt20'          : 'formLogin:j_idt20',
-                'formLogin'                  : 'formLogin',
-                'formLogin:j_idt16'          : '10302',
-                'formLogin:j_idt18'          : 'obdI109j',
-                'javax.faces.ViewState'      : viewState
-        ]
+        for (DadoLogin dadoLogin in dadosLoginList) {
+            realizarLoginOpa(dadoLogin)
+        }
+        then:
+        println("Total de usuários logados: " + qtdUsuariosLogados)
+    }
 
-        MediaType mediaType = MediaType.parse("application/x-www-form-urlencoded; charset=UTF-8");
-        RequestBody body = RequestBody.create(mediaType, "formLogin=formLogin&formLogin:j_idt16=10302&formLogin:j_idt18=obdI109j&formLogin:j_idt20=formLogin:j_idt20&javax.faces.ViewState=${viewState}&javax.faces.partial.ajax=true&javax.faces.partial.execute=@all&javax.faces.partial.render=formLogin&javax.faces.source=formLogin:j_idt20");
-        httpAcces.sendRequest(url1, 'POST', body)
-        String paginaInicial = httpAcces.sendRequest(url2, 'GET')
+    void 'testa login varios usuarios - edoc'() {
+        setup:
+        List<DadoLogin> dadosLoginList = HttpAcessHelper.obtenhaDadosLogin()
+
+        when:
+            realizarLoginEdoc(dadosLoginList.find{it.login == "10302"})
 
         then:
-        paginaInicial
-        pageIndex
+        ''
+    }
+
+    private static realizarLoginOpa(DadoLogin dadoLogin) {
+        HttpAcces httpAcces = new HttpAcces()
+        String pageIndex = httpAcces.processaRequisicao(HttpAcessHelper.URL_PAGINA_LOGIN_OPA, "GET")
+        String sessionid = pageIndex.find('jsessionid=.*(?=" enctype)').toUpperCase()
+        Map<String, Object> params = HttpAcessHelper.obtenhaParamsLoginOpa(dadoLogin)
+
+        RequestBody body = HttpAcessHelper.obtenhaRequestBody(params)
+        httpAcces.processaRequisicao(HttpAcessHelper.URL_PAGINA_LOGIN_OPA, 'POST', body, sessionid)
+        String paginaInicial = httpAcces.processaRequisicao(HttpAcessHelper.URL_PAGINA_INICIAL_OPA, 'GET', null, sessionid)
+        Boolean loginSucesso = paginaInicial.find('Sejam Bem Vindos ao OPA!') asBoolean()
+
+        if (loginSucesso) {
+            println("O usuário ${dadoLogin.nome} logou no sistema OPA com sucesso em ${LocalDateTime.now()}")
+            qtdUsuariosLogados++
+        }
+    }
+
+    private static realizarLoginEdoc(DadoLogin dadoLogin) {
+
+        HttpAcces httpAcces = new HttpAcces()
+        String pageIndex = httpAcces.processaRequisicao(HttpAcessHelper.URL_PAGINA_LOGIN_EDOC, "GET")
+        String sessionid = pageIndex.find('jsessionid=.*(?=" enctype)')
+        Map<String, Object> params = HttpAcessHelper.obtenhaParamsLoginOpa(dadoLogin)
+
+        RequestBody body = HttpAcessHelper.obtenhaRequestBody(params)
+        httpAcces.processaRequisicao(HttpAcessHelper.URL_PAGINA_LOGIN_EDOC, 'POST', body, sessionid)
+        String paginaInicial = httpAcces.processaRequisicao(HttpAcessHelper.URL_PAGINA_INICIAL_EDOC, 'GET', null, sessionid)
+        Boolean loginSucesso = paginaInicial.find('Sejam Bem Vindos ao OPA!') asBoolean()
+
+        if (loginSucesso) {
+            println("O usuário ${dadoLogin.nome} logou no sistema OPA com sucesso em ${LocalDateTime.now()}")
+            qtdUsuariosLogados++
+        }
+
     }
 }
