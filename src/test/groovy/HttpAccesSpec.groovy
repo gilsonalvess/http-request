@@ -48,11 +48,11 @@ class HttpAccesSpec extends Specification {
     }
 
     private static realizarLoginEdoc(DadoLogin dadoLogin) {
-
         HttpAcces httpAcces = new HttpAcces()
         String pageIndex = httpAcces.processaRequisicao(HttpAcessHelper.URL_PAGINA_LOGIN_EDOC, "GET")
-        String sessionid = pageIndex.find('jsessionid=.*(?=" enctype)')
-        Map<String, Object> params = HttpAcessHelper.obtenhaParamsLoginOpa(dadoLogin)
+        String sessionid = "JSESSIONID=".concat(pageIndex.find('(?<=jsessionid=).*(?=" enctype)'))
+        String viewState = pageIndex.find('(?<=value=")[\\d-:]+(?=" autocomplete)')
+        Map<String, Object> params = HttpAcessHelper.obtenhaParamsLoginEdoc(dadoLogin, viewState)
 
         RequestBody body = HttpAcessHelper.obtenhaRequestBody(params)
         httpAcces.processaRequisicao(HttpAcessHelper.URL_PAGINA_LOGIN_EDOC, 'POST', body, sessionid)
