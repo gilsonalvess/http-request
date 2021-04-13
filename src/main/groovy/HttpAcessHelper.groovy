@@ -5,8 +5,13 @@ class HttpAcessHelper {
 
     public static final String URL_PAGINA_LOGIN_OPA = 'http://localhost:8080/WebCrer_war/login.faces'
     public static final String URL_PAGINA_INICIAL_OPA = 'http://localhost:8080/WebCrer_war/index_logado.faces'
-    public static final String URL_PAGINA_LOGIN_EDOC = 'http://edoc.agirgo.org.br:5000/GerenciadorProcessoWeb/index.xhtml'
-    public static final String URL_PAGINA_INICIAL_EDOC = 'http://edoc.agirgo.org.br:5000/GerenciadorProcessoWeb/processo/dashboard.xhtml'
+
+    public static final String URL_PAGINA_LOGIN_EDOC = 'http://localhost:8080/GerenciadorProcessoWeb-0.0.1-SNAPSHOT/index.xhtml'
+    public static final String URL_PAGINA_INICIAL_EDOC = 'http://localhost:8080/GerenciadorProcessoWeb-0.0.1-SNAPSHOT/processo/dashboard.xhtml'
+
+    public static final String URL_PAGINA_LOGIN_SIGEPI = 'http://produtividademedica.agirgo.org.br:9876/agirSaudeWeb/index.xhtml'
+    public static final String URL_PAGINA_INICIAL_SIGEPI = 'http://produtividademedica.agirgo.org.br:9876/agirSaudeWeb/principal/dashboard.xhtml'
+
 
     static Map<String, Object> obtenhaParamsLoginEdoc(DadoLogin dadoLogin, String viewState) {
         Map<String, Object> params = [
@@ -19,6 +24,21 @@ class HttpAcessHelper {
                 'formLogin:j_idt16'          : dadoLogin.login,
                 'formLogin:j_idt18'          : dadoLogin.senha,
                 'javax.faces.ViewState'      : viewState
+        ] as Map<String, Object>
+        return params
+    }
+
+    static Map<String, Object> obtenhaParamsLoginSigepi(DadoLogin dadoLogin, String viewState) {
+        Map<String, Object> params = [
+                'javax.faces.partial.ajax'   : "true",
+                'javax.faces.source'         : "formLogin:j_idt19",
+                'javax.faces.partial.execute': "@all",
+                'javax.faces.partial.render' : "formLogin",
+                'formLogin:j_idt19'          : "formLogin:j_idt19",
+                'formLogin'                  : "formLogin",
+                'javax.faces.ViewState'      : viewState,
+                'formLogin:j_idt15'          : dadoLogin.login,
+                'formLogin:j_idt17'          : dadoLogin.senha,
         ] as Map<String, Object>
         return params
     }
@@ -51,7 +71,7 @@ class HttpAcessHelper {
 
     static List<DadoLogin> obtenhaDadosLogin() {
         String conteudoArquivo = new File("src/main/resources/dadosLogin.txt").text
-        String regexDadosLogin = '(?m)^([^\\|]+)\\|([^\\|]+)\\|([^\\|]+)'
+        String regexDadosLogin = '(?m)^([^\\|]+)\\|([^\\|]+)\\|([^\\|]+\$)'
         List<DadoLogin> dadosLogin = []
 
         conteudoArquivo.findAll(regexDadosLogin) { String linha, String login, String senha, String nome ->
